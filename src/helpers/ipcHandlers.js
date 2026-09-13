@@ -148,6 +148,7 @@ const {
   resolveContextSileroEnabled,
 } = require("./whisperVadConfig");
 
+const { transcribeMeetingChunkBatch } = require("./meetingBatchTranscription");
 const {
   ALLOWED_MEETING_PROVIDERS,
   getMeetingStreamingClient,
@@ -7387,6 +7388,11 @@ class IPCHandlers {
     let meetingLocalWin = null;
     let meetingLocalTranscript = "";
     let meetingLocalProvider = null;
+    // Cloud Providers → Custom: OpenAI-compatible batch endpoint resolved by the
+    // renderer (meetingTranscriptionRouting); the key is read here, never sent.
+    let meetingCustomEndpoint = null;
+    let meetingCustomModel = null;
+    let meetingCustomAuthScheme = null;
     let meetingLocalModel = null;
     let meetingLocalLanguage = null;
     let meetingLocalTranscribing = false;
@@ -7784,7 +7790,24 @@ class IPCHandlers {
 
       try {
         let result;
-        if (isSherpaLocalProvider(meetingLocalProvider)) {
+        if (meetingLocalProvider === "custom") {
+          const requestStartedAt = Date.now();
+          result = await transcribeMeetingChunkBatch({
+            endpoint: meetingCustomEndpoint,
+            model: meetingCustomModel,
+            language: meetingLocalLanguage,
+            wav,
+            apiKey: this.environmentManager.getCustomTranscriptionKey(),
+            authScheme: meetingCustomAuthScheme,
+            fetchImpl: proxyFetch,
+          });
+          debugLogger.debug("Custom endpoint meeting chunk transcribed", {
+            source,
+            wavBytes: wav.length,
+            requestMs: Date.now() - requestStartedAt,
+            textLength: result?.text?.trim?.().length ?? 0,
+          });
+        } else if (isSherpaLocalProvider(meetingLocalProvider)) {
           result = await this.parakeetManager.transcribeLocalParakeet(wav, {
             model: meetingLocalModel,
             language: meetingLocalLanguage,
@@ -7987,6 +8010,9 @@ class IPCHandlers {
       meetingLocalProvider = null;
       meetingLocalModel = null;
       meetingLocalLanguage = null;
+      meetingCustomEndpoint = null;
+      meetingCustomModel = null;
+      meetingCustomAuthScheme = null;
       meetingLocalTranscribing = false;
       meetingPendingMicChunks = [];
       resetPendingMicFinals();
@@ -8354,7 +8380,7 @@ class IPCHandlers {
         return { success: false, error: `Unsupported provider: ${options.provider}` };
       }
 
-      if (options.provider === "local") {
+      if (options.provider === "local" || options.provider === "custom") {
         return { success: true };
       }
 
@@ -8501,11 +8527,15 @@ class IPCHandlers {
           });
         }
 
-        if (options.provider === "local") {
+        if (options.provider === "local" || options.provider === "custom") {
           meetingLocalMode = true;
-          meetingLocalProvider = options.localProvider || "whisper";
+          meetingLocalProvider =
+            options.provider === "custom" ? "custom" : options.localProvider || "whisper";
           meetingLocalModel = options.localModel || null;
           meetingLocalLanguage = options.language || null;
+          meetingCustomEndpoint = options.endpoint || null;
+          meetingCustomModel = options.model || null;
+          meetingCustomAuthScheme = options.authScheme || "bearer";
           meetingLocalWin = BrowserWindow.fromWebContents(event.sender);
           meetingLocalBuffers = { mic: [], system: [] };
           meetingLocalTranscript = "";
