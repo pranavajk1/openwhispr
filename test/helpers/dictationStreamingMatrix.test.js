@@ -368,7 +368,8 @@ test("closure: every personal meeting provider has a token entry", async () => {
   const { ALLOWED_MEETING_PROVIDERS } = await loadMeeting();
   for (const provider of ALLOWED_MEETING_PROVIDERS) {
     // Enterprise uses the profile's socket factory, covered by enterpriseAudioTransport.test.js.
-    if (provider === "local" || provider === "enterprise-realtime") continue;
+    // local and custom run on the chunk pipeline; neither fetches a realtime token.
+    if (provider === "local" || provider === "enterprise-realtime" || provider === "custom") continue;
     assert.equal(
       typeof REALTIME_TOKEN_PROVIDERS[provider],
       "function",

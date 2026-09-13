@@ -643,8 +643,10 @@ export default function TranscriptionModelPicker({
     [availableCloudProviders, policyState]
   );
   const cloudProviderTabs = useMemo(() => {
+    // Custom is a batch endpoint every scope can run: Note Recording chunks
+    // audio to it (meetingTranscriptionRouting) instead of streaming.
     const availableIds = new Set(availableCloudProviders.map((p) => p.id));
-    if (!streamingOnly) availableIds.add("custom");
+    availableIds.add("custom");
     const tabs = CLOUD_PROVIDER_TABS.filter((provider) => availableIds.has(provider.id)).map(
       (provider) =>
         provider.id === "custom"
@@ -652,7 +654,7 @@ export default function TranscriptionModelPicker({
           : provider
     );
     return filterByokProviderOptionsByPolicy(tabs, "transcription", policyState);
-  }, [availableCloudProviders, policyState, streamingOnly, t]);
+  }, [availableCloudProviders, policyState, t]);
   const policyRestricted = policyState.status === "managed";
   const localProviderTabs = useMemo(() => {
     const installedInFamily = (providerId: string): boolean =>
@@ -785,7 +787,7 @@ export default function TranscriptionModelPicker({
         selectedProvider: browsedCloudProvider ?? selectedCloudProvider,
         selectedModel: selectedCloudModel,
         allowedProviders: cloudProviders,
-        customAllowed: !streamingOnly && providerAllowed("custom"),
+        customAllowed: providerAllowed("custom"),
         hasCustomUrl,
       }) ?? {
         provider: browsedCloudProvider ?? selectedCloudProvider,
@@ -799,7 +801,6 @@ export default function TranscriptionModelPicker({
     selectedCloudProvider,
     selectedCloudModel,
     providerAllowed,
-    streamingOnly,
   ]);
   const displayedCloudProvider = effectiveCloudSelection.provider;
   const displayedCloudModel = effectiveCloudSelection.model;
