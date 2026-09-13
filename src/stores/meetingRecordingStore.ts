@@ -215,6 +215,7 @@ const getMeetingTranscriptionOptions = () => {
       cortiEnvironment: state.cortiEnvironment,
       cortiTenant: state.cortiTenant,
       keyterms: getKeytermDictionaryWords(state).filter(Boolean),
+      customBaseUrl: resolved.cloudTranscriptionBaseUrl,
     }),
     enterpriseIdentity,
     enterpriseSetupMode: state.enterpriseTranscriptionSetupMode,
