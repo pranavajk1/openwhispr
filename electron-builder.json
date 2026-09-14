@@ -1,5 +1,5 @@
 {
-  "appId": "com.gizmolabs.openwhispr",
+  "appId": "com.pranavajk.openwhispr",
   "afterPack": "scripts/afterPack.js",
   "extraMetadata": {
     "windowsTrayIdentity": true
@@ -160,7 +160,7 @@
     "entitlements": "resources/mac/entitlements.mac.plist",
     "entitlementsInherit": "resources/mac/entitlements.mac.plist",
     "identity": "Gizmo Labs Inc. (T832773L2J)",
-    "notarize": true,
+    "notarize": false,
     "extraResources": [
       {
         "from": "src/assets/Assets.car",
@@ -277,7 +277,7 @@
   },
   "publish": {
     "provider": "github",
-    "owner": "OpenWhispr",
+    "owner": "pranavajk1",
     "repo": "openwhispr",
     "private": false,
     "releaseType": "draft"
